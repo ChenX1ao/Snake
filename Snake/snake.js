@@ -1,43 +1,56 @@
 function Snake() {
-
-  this.x = 0;
-  this.y = 0;
-  this.xspeed = 1;
-  this.yspeed = 0;
-  this.total = 0;
-  this.tail = [];
-
   this.body = [];
-  this.body.push(createVector(0, 0));
-  this.body.push(createVector(1, 1));
-  print(this.body.length);
-  print(this.body[0], this.body[1]);
+  this.getHead = function() {
+    return this.body[0];
+  }
+  this.getTail = function() {
+    return this.body[this.body.length - 1];
+  }
 
-  this.dir = function(x, y) {
-    this.xspeed = x;
-    this.yspeed = y;
+  this.spawn = function(pos) {
+    this.body = [];
+    this.body.push(pos);
+    this.direction = createVector(1, 0);
+  }
+
+  this.turn = function(x, y) {
+    this.direction = createVector(x, y);
   }
 
   this.move = function() {
-    this.x = this.x + this.xspeed * scl;
-    this.y = this.y + this.yspeed * scl;
-
-    this.x = constrain(this.x, 0, width - scl);
-    this.y = constrain(this.y, 0, height - scl);
+    this.body.unshift(createVector(this.getHead().x + this.direction.x, this.getHead().y + this.direction.y));
+    this.previousTail = this.body.pop(this.body[this.body.length - 1]);
   }
 
-  this.eat = function(food) {
-    var d = dist(this.x, this.y, food.pos.x, food.pos.y);
+  this.grow = function() {
+    this.body.push(this.previousTail);
+  }
+
+  this.findFood = function(food) {
+    var d = dist(this.getHead().x, this.getHead().y, food.pos.x, food.pos.y);
     if (d < 1) {
-      this.total++;
       return true;
     } else {
       return false;
     }
   }
 
-  this.show = function() {
-    fill(255);
-    rect(this.x, this.y, scl, scl);
+  this.hitBody = function() {
+    var d;
+    for (var i = 1; i < this.body.length; i++) {
+      d = dist(this.getHead().x, this.getHead().y, this.body[i].x, this.body[i].y);
+      if (d < 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  this.hitWall = function(gameWidth, gameHeight) {
+    if (this.getHead().x < 0 || this.getHead().x > gameWidth - 1 || this.getHead().y < 0 || this.getHead().y > gameHeight - 1) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
