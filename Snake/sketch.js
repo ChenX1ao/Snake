@@ -1,12 +1,14 @@
-var scl = 30;
+//game setup
+var scl = Math.max(16, Math.floor(Math.min(window.innerWidth, window.innerHeight) / 30) - 5);
 var gameWidth = 30, gameHeight = 30;
 var gamePause = false;
 var snake, food;
 
 function setup() {
-  frameRate(10);
+  frameRate(6);
   // frameRate(0.5);
-  createCanvas(gameWidth * scl, gameHeight * scl);
+  var canvas = createCanvas(gameWidth * scl, gameHeight * scl);
+  canvas.parent('sketch-holder');
   background(0);
 
   newGame();
@@ -14,16 +16,42 @@ function setup() {
 }
 
 function keyPressed() {
-  if (keyCode === UP_ARROW) {
-    snake.turn(0, -1);
-  } else if (keyCode === DOWN_ARROW) {
-    snake.turn(0, 1);
-  } else if (keyCode === LEFT_ARROW) {
-    snake.turn(-1, 0);
-  } else if (keyCode === RIGHT_ARROW) {
-    snake.turn(1, 0);
+  //change snake direction. Avoid moving backwards
+  if (snake.direction.x === 1 && snake.direction.y === 0) {
+    if (keyCode === UP_ARROW) {
+      snake.turn(createVector(0, -1));
+    } else if (keyCode === DOWN_ARROW) {
+      snake.turn(createVector(0, 1));
+    } else if (keyCode === RIGHT_ARROW) {
+      snake.turn(createVector(1, 0));
+    }
+  } else if (snake.direction.x === -1 && snake.direction.y === 0) {
+    if (keyCode === UP_ARROW) {
+      snake.turn(createVector(0, -1));
+    } else if (keyCode === DOWN_ARROW) {
+      snake.turn(createVector(0, 1));
+    } else if (keyCode === LEFT_ARROW) {
+      snake.turn(createVector(-1, 0));
+    }
+  } else if (snake.direction.x === 0 && snake.direction.y === 1) {
+    if (keyCode === DOWN_ARROW) {
+      snake.turn(createVector(0, 1));
+    } else if (keyCode === LEFT_ARROW) {
+      snake.turn(createVector(-1, 0));
+    } else if (keyCode === RIGHT_ARROW) {
+      snake.turn(createVector(1, 0));
+    }
+  } else if (snake.direction.x === 0 && snake.direction.y === -1) {
+    if (keyCode === UP_ARROW) {
+      snake.turn(createVector(0, -1));
+    } else if (keyCode === LEFT_ARROW) {
+      snake.turn(createVector(-1, 0));
+    } else if (keyCode === RIGHT_ARROW) {
+      snake.turn(createVector(1, 0));
+    }
   }
 
+  //pause game
   if (keyCode === 80) {
     if (gamePause === false) {
       print('Game is paused.')
@@ -35,10 +63,14 @@ function keyPressed() {
       gamePause = false;
     }
   }
+
+  //manual grow
+  if (keyCode === 67) {
+    snake.grow();
+  }
 }
 
 function mousePressed() {
-  snake.grow();
 }
 
 function draw() {
@@ -54,6 +86,11 @@ function draw() {
     gameOver();
     newGame();
   }
+}
+
+function windowResized() {
+  scl = max(20, floor(min(window.innerWidth, window.innerHeight) / 30) - 2);
+  resizeCanvas(gameWidth * scl, gameHeight * scl);
 }
 
 function drawGame() {
@@ -79,12 +116,44 @@ function drawGame() {
 }
 
 function availableLocations() {
-  // array to store available locations
+  var a = [];
+  var n = 0;
+  for (var i = 0; i < gameWidth; i++) {
+    a.push([]);
+    for (var j = 0; j < gameHeight; j++) {
+      a[i].push(true);
+      n++;
+    }
+  }
+  for (var i = 0; i < snake.body.length; i++) {
+    a[snake.body[i].x][snake.body[i].y] = false;
+    n--;
+  }
+  return {a:a, n:n};
 }
 
 function pickLocation() {
-  // random from available locations
-  return createVector(floor(random(gameWidth)), floor(random(gameHeight)));
+  var r = floor(random(availableLocations().n));
+  for (var i = 0; i < gameWidth; i++) {
+    for (var j = 0; j < gameHeight; j++) {
+      if (availableLocations().a[i][j] === true) {
+        r--;
+        if (r === 0) {
+          return createVector(i, j);
+        }
+      }
+    }
+  }
+}
+
+function print2DArray(array) {
+  for (var i = 0; i < array.length; i++) {
+    for (var j = 0; j < array[i].length; j++) {
+      if (array[i][j] === false) {
+        print(i, j, array[i][j]);
+      }
+    }
+  }
 }
 
 function newGame() {
