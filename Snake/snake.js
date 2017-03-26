@@ -13,8 +13,9 @@ function Snake() {
     this.direction = createVector(1, 0);
   }
 
-  this.turn = function(dir) {
-    this.direction = dir;
+  this.turn = function(x, y) {
+    this.direction.x = x;
+    this.direction.y = y;
   }
 
   this.move = function() {

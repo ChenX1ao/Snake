@@ -3,9 +3,11 @@ var scl = Math.max(16, Math.floor(Math.min(window.innerWidth, window.innerHeight
 var gameWidth = 30, gameHeight = 30;
 var gamePause = false;
 var snake, food;
+var dir, dirBuffer, dirBuffer2;
 
+//game setup
 function setup() {
-  frameRate(6);
+  frameRate(8);
   // frameRate(0.5);
   var canvas = createCanvas(gameWidth * scl, gameHeight * scl);
   canvas.parent('sketch-holder');
@@ -15,40 +17,37 @@ function setup() {
   drawGame();
 }
 
+function windowResized() {
+  scl = max(20, floor(min(window.innerWidth, window.innerHeight) / 30) - 2);
+  resizeCanvas(gameWidth * scl, gameHeight * scl);
+}
+
+//player input
 function keyPressed() {
   //change snake direction. Avoid moving backwards
-  if (snake.direction.x === 1 && snake.direction.y === 0) {
-    if (keyCode === UP_ARROW) {
-      snake.turn(createVector(0, -1));
-    } else if (keyCode === DOWN_ARROW) {
-      snake.turn(createVector(0, 1));
-    } else if (keyCode === RIGHT_ARROW) {
-      snake.turn(createVector(1, 0));
-    }
-  } else if (snake.direction.x === -1 && snake.direction.y === 0) {
-    if (keyCode === UP_ARROW) {
-      snake.turn(createVector(0, -1));
-    } else if (keyCode === DOWN_ARROW) {
-      snake.turn(createVector(0, 1));
-    } else if (keyCode === LEFT_ARROW) {
-      snake.turn(createVector(-1, 0));
-    }
-  } else if (snake.direction.x === 0 && snake.direction.y === 1) {
-    if (keyCode === DOWN_ARROW) {
-      snake.turn(createVector(0, 1));
-    } else if (keyCode === LEFT_ARROW) {
-      snake.turn(createVector(-1, 0));
-    } else if (keyCode === RIGHT_ARROW) {
-      snake.turn(createVector(1, 0));
-    }
-  } else if (snake.direction.x === 0 && snake.direction.y === -1) {
-    if (keyCode === UP_ARROW) {
-      snake.turn(createVector(0, -1));
-    } else if (keyCode === LEFT_ARROW) {
-      snake.turn(createVector(-1, 0));
-    } else if (keyCode === RIGHT_ARROW) {
-      snake.turn(createVector(1, 0));
-    }
+  if (keyCode === UP_ARROW) {
+    dir.x = 0;
+    dir.y = -1;
+  } else if (keyCode === DOWN_ARROW) {
+    dir.x = 0;
+    dir.y = 1;
+  } else if (keyCode === LEFT_ARROW) {
+    dir.x = -1;
+    dir.y = 0;
+  } else if (keyCode === RIGHT_ARROW) {
+    dir.x = 1;
+    dir.y = 0;
+  }
+
+  //if the player input direction is not on the opposite as the current snake direction, set the buffer and 2nd buffer equal to the player input
+  //if the player input direction is on the opposite, and the buffer direction is not on the same direction as the current snake direction, set the 2nd buffer equal to the player input
+  //this is to avoid the snake can turn backwards and hit the body, as well as store the next move instruction even if the player input two consecutive moves before the next snake move
+  if (dist(snake.direction.x, snake.direction.y, dir.x, dir.y) !== 2) {
+    dirBuffer.x = dirBuffer2.x = dir.x;
+    dirBuffer.y = dirBuffer2.y = dir.y;
+  } else if (dist(snake.direction.x, snake.direction.y, dirBuffer.x, dirBuffer.y) !== 0) {
+    dirBuffer2.x = dir.x;
+    dirBuffer2.y = dir.y;
   }
 
   //pause game
@@ -73,24 +72,43 @@ function keyPressed() {
 function mousePressed() {
 }
 
+//game run
 function draw() {
   background(0);
+
+  snake.turn(dirBuffer.x, dirBuffer.y);
+  dirBuffer.x = dirBuffer2.x;
+  dirBuffer.y = dirBuffer2.y;
 
   snake.move();
   if (snake.findFood(food)) {
     snake.grow();
     food.spawn(pickLocation());
   }
+
   drawGame();
+
   if (snake.hitBody() || snake.hitWall(gameWidth, gameHeight)) {
     gameOver();
     newGame();
   }
 }
 
-function windowResized() {
-  scl = max(20, floor(min(window.innerWidth, window.innerHeight) / 30) - 2);
-  resizeCanvas(gameWidth * scl, gameHeight * scl);
+function newGame() {
+  snake = new Snake();
+  snake.spawn(createVector(0, 0));
+
+  food = new Food();
+  food.spawn(pickLocation());
+
+  dir = createVector(1, 0);
+  dirBuffer = createVector(1, 0);
+  dirBuffer2 = createVector(1, 0);
+}
+
+function gameOver() {
+  print('Game Over!');
+  snake.spawn(createVector(0, 0));
 }
 
 function drawGame() {
@@ -146,6 +164,7 @@ function pickLocation() {
   }
 }
 
+//debug
 function print2DArray(array) {
   for (var i = 0; i < array.length; i++) {
     for (var j = 0; j < array[i].length; j++) {
@@ -154,16 +173,4 @@ function print2DArray(array) {
       }
     }
   }
-}
-
-function newGame() {
-  snake = new Snake();
-  snake.spawn(createVector(0, 0));
-  food = new Food();
-  food.spawn(pickLocation());
-}
-
-function gameOver() {
-  print('Game Over!');
-  snake.spawn(createVector(0, 0));
 }
